@@ -1,0 +1,11 @@
+# Per-agent LLM endpoints (optional)
+# Copied to ~/.arrowcode/agents.yaml on first install/setup only.
+# Prefer secrets in environment variables:
+#   ARROW_ORCH_API_KEY, ARROW_FE_MODEL, ARROW_BE_BASE_URL, ARROW_QA_PROVIDER, ...
+#
+# Leave a section empty {} to inherit the global config from setup.
+
+orchestrator: {}
+frontend: {}
+backend: {}
+tester: {}
