@@ -1,0 +1,22 @@
+# Example ArrowCode config (copied as reference; real config is ~/.arrowcode/config.yaml)
+provider: nim
+model: meta/llama-3.3-70b-instruct
+baseUrl: https://integrate.api.nvidia.com/v1
+temperature: 0.2
+maxTokens: 8192
+maxToolRounds: 28
+maxExecuteCycles: 12
+autoApprove: false
+contextBudgetChars: 120000
+swarm:
+  enabled: true
+  maxWorkers: 16
+  maxDepth: 2
+  maxChildrenPerAgent: 4
+  summarizeThresholdChars: 100000
+  keepRecentMessages: 14
+agentsEnabled:
+  orchestrator: true
+  frontend: true
+  backend: true
+  tester: true
