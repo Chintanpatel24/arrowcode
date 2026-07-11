@@ -36,7 +36,7 @@
 - **Perf:** parallel read tools, prompt/file caches, fast context trim (`/perf`)
 - **Packaging:** `defaults/` in repo; `~/.arrowcode` only after install/setup
 
-<pre>
+<pre align=center>
 ┌ Header · provider/model · YOLO · swarm n/16 · RUNNING ─┐
 │ phase EXECUTING · plan title                           │
 ├──────────────────────────────┬────────────┬────────────┤
