@@ -1,0 +1,8 @@
+node_modules/
+.github/
+*.log
+.DS_Store
+.arrowcode/
+.arrowcode-sessions/
+.arrowcode-checkpoints/
+coverage/
