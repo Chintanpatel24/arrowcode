@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolve package root (bin/ is next to package.json when linked or run from repo)
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if command -v bun >/dev/null 2>&1; then
+  exec bun "$ROOT/src/index.ts" "$@"
+fi
+
+if command -v npx >/dev/null 2>&1; then
+  # Fallback: bun not on PATH — try via npm-installed bun or plain node won't work (TS)
+  echo "ArrowCode requires Bun. Install: https://bun.sh" >&2
+  echo "  curl -fsSL https://bun.sh/install | bash" >&2
+  exit 1
+fi
+
+echo "ArrowCode requires Bun. Install: https://bun.sh" >&2
+exit 1
