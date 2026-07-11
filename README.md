@@ -11,9 +11,9 @@
 
 </div>
 
-- **Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
+**Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
 
-> Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
+Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
 
 | Doc | Contents |
 |-----|----------|
@@ -61,28 +61,58 @@
 
 ## Install
 
+### One-liner (recommended)
+
+**Linux / macOS / WSL (`install.sh`)**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.sh | bash
+```
+
+Install + open API setup wizard:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.sh | bash -s -- --setup
+```
+
+**Windows PowerShell (`install.ps1`)**
+
+```powershell
+irm https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.ps1 | iex
+```
+
+Install + API setup wizard:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.ps1))) -Setup
+```
+
+Or clone first, then:
+
+```powershell
+git clone https://github.com/Chintanpatel24/arrowcode.git
+cd arrowcode
+.\install.ps1 -Setup
+```
+
+What the one-liners do:
+
+1. Install Bun if missing  
+2. Clone/update ArrowCode  
+3. `bun install`  
+4. Seed `~/.arrowcode` from `defaults/`  
+5. Link `arrowcode` / `ac` onto your PATH  
+
 ### From a clone
 
 ```bash
-git clone https://github.com/YOUR_USER/arrowcode.git
+git clone https://github.com/Chintanpatel24/arrowcode.git
 cd arrowcode
 chmod +x install.sh bin/arrowcode
 ./install.sh
 # or without install script:
 bun install
 bun link          # optional global arrowcode / ac
-```
-
-### One-liner (after you publish)
-
-```bash
-# Linux / macOS / WSL — replace YOUR_USER
-curl -fsSL https://raw.githubusercontent.com/YOUR_USER/arrowcode/main/install.sh | bash
-```
-
-```powershell
-# Windows PowerShell
-irm https://raw.githubusercontent.com/YOUR_USER/arrowcode/main/install.ps1 | iex
 ```
 
 ### Setup API key
@@ -93,7 +123,7 @@ arrowcode --setup
 export NVIDIA_API_KEY=nvapi-...
 ```
 
-`~/.arrowcode` is created **only** by `--setup`, `--init`, or `./install.sh` (copied from `defaults/`).
+`~/.arrowcode` is created **only** by `--setup`, `--init`, or `./install.sh` / `install.ps1` (copied from `defaults/`).
 
 ---
 
