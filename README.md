@@ -11,9 +11,9 @@
 
 </div>
 
-**Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
+- **Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
 
-Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
+> Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
 
 | Doc | Contents |
 |-----|----------|
