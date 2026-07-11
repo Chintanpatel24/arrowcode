@@ -17,7 +17,7 @@ Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm worke
 
 | Doc | Contents |
 |-----|----------|
-| **[GUIDE.md](GUIDE.md)** | Full command reference + working playbooks + diagrams |
+| **[GUIDE.md](docs/GUIDE.md)** | Full command reference + working playbooks + diagrams |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
 | [docs/SESSIONS.md](docs/SESSIONS.md) | Session memory |
 | [docs/SECURITY.md](docs/SECURITY.md) | Policy / sandbox |
