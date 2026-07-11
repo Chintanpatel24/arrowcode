@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# build / cache
+dist/
+.dist/
+coverage/
+*.tsbuildinfo
+*.log
+.DS_Store
+*.tgz
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# local user config (never commit)
+.arrowcode/
+
+# workspace runtime (created while coding in a project)
+.arrowcode-sessions/
+.arrowcode-checkpoints/
+.arrow-plan.md
+
+# editors
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+Thumbs.db
