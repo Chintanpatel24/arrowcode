@@ -81,10 +81,13 @@ if ! command -v bun >/dev/null 2>&1; then
 fi
 ok "Bun $(bun --version)"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
 
 # Prefer in-place install when running from a full checkout
-if [[ -z "${ARROWCODE_DIR:-}" && -f "$SCRIPT_DIR/package.json" && -f "$SCRIPT_DIR/src/index.ts" ]]; then
+if [[ -n "$SCRIPT_DIR" && -z "${ARROWCODE_DIR:-}" && -f "$SCRIPT_DIR/package.json" && -f "$SCRIPT_DIR/src/index.ts" ]]; then
   INSTALL_DIR="$SCRIPT_DIR"
   log "Detected local repo — installing in-place: $INSTALL_DIR"
 fi
@@ -103,7 +106,7 @@ else
   mkdir -p "$(dirname "$INSTALL_DIR")"
   if command -v git >/dev/null 2>&1 && git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$INSTALL_DIR" 2>/dev/null; then
     ok "Cloned repository"
-  elif [[ -f "$SCRIPT_DIR/package.json" ]]; then
+  elif [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/package.json" ]]; then
     log "Clone unavailable — copying local repo from $SCRIPT_DIR"
     mkdir -p "$INSTALL_DIR"
     if command -v rsync >/dev/null 2>&1; then
