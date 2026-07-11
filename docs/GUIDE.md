@@ -32,6 +32,20 @@ Complete working plans, command reference, and system flows.
 
 ## 1. Quick start
 
+**One-liner install (after publish — replace `YOUR_USER`)**
+
+```bash
+# Linux / macOS / WSL
+curl -fsSL https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.sh | bash
+```
+
+```powershell
+# Windows PowerShell
+irm https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.ps1 | iex
+```
+
+**From a local clone**
+
 ```bash
 # from repo root
 bun install
