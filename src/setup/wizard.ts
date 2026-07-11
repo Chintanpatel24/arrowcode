@@ -61,15 +61,32 @@ export async function runSetupWizard(): Promise<boolean> {
     console.log(`    ${CONFIG_PATH}`);
     console.log("");
 
+    const startAns = await ask(rl, "  Would you like to configure your API key now? [Y/n] (default Y): ");
+    if (/^n(o)?$/i.test(startAns)) {
+      console.log("");
+      console.log("  No problem! You can configure ArrowCode later by running: arrowcode --setup");
+      console.log("");
+      return true;
+    }
+
+    console.log("");
     console.log("  Provider:");
     console.log("    1) NVIDIA NIM   (default — free keys at build.nvidia.com)");
     console.log("    2) OpenAI");
     console.log("    3) Anthropic");
     console.log("    4) Ollama       (local, no key)");
     console.log("    5) Custom OpenAI-compatible base URL");
+    console.log("    0) Cancel / Set up later");
     console.log("");
 
-    const pAns = await ask(rl, "  Choose [1-5] (default 1): ");
+    const pAns = await ask(rl, "  Choose [0-5] (default 1): ");
+    if (pAns === "0" || pAns.toLowerCase() === "cancel") {
+      console.log("");
+      console.log("  No problem! You can configure ArrowCode later by running: arrowcode --setup");
+      console.log("");
+      return true;
+    }
+
     const map: Record<string, ProviderId> = {
       "": "nim",
       "1": "nim",
@@ -133,7 +150,7 @@ export async function runSetupWizard(): Promise<boolean> {
       console.log("");
       console.log("  No API key entered. Setup cancelled.");
       console.log("  Re-run:  arrowcode --setup");
-      return false;
+      return true;
     }
 
     const yoloAns = await ask(

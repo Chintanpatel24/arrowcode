@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Resolve package root (bin/ is next to package.json when linked or run from repo)
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve symlinks to find the real script path and package root
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+ROOT="$(cd "$DIR/.." && pwd)"
 
 if command -v bun >/dev/null 2>&1; then
   exec bun "$ROOT/src/index.ts" "$@"

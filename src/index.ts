@@ -144,6 +144,9 @@ async function main() {
     bootstrapUserHome();
     const ok = await runSetupWizard();
     if (!ok) process.exit(1);
+    if (!isConfigured()) {
+      process.exit(0);
+    }
   }
 
   // Runtime: packaged defaults work without home; seed if home already exists
