@@ -1,4 +1,5 @@
-<div align=center>
+<div >
+<img align="left" src="assets/arrowcode.png" alt="LOGO" width="150" height="150">
 <pre>
      █████╗ ██████╗ ██████╗  ██████╗ ██╗    ██╗ ██████╗ ██████╗ ██████╗ ███████╗
     ██╔══██╗██╔══██╗██╔══██╗██╔═══██╗██║    ██║██╔════╝██╔═══██╗██╔══██╗██╔════╝
@@ -7,7 +8,7 @@
     ██║  ██║██║  ██║██║  ██║╚██████╔╝╚███╔███╔╝╚██████╗╚██████╔╝██████╔╝███████╗
     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
 </pre>
-<img src="assets/arrowcode.png" width=300>
+
 </div>
 
 **Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
