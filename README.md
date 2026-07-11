@@ -36,18 +36,6 @@ Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm worke
 - **Perf:** parallel read tools, prompt/file caches, fast context trim (`/perf`)
 - **Packaging:** `defaults/` in repo; `~/.arrowcode` only after install/setup
 
-<pre align=center>
-┌ Header · provider/model · YOLO · swarm n/16 · RUNNING ─┐
-│ phase EXECUTING · plan title                           │
-├──────────────────────────────┬────────────┬────────────┤
-│ ORCH          │ FE           │ PLAN       │ SWARM map  │
-│ BE            │ QA           │ FILES      │ DIFF       │
-├──────────────────────────────┴────────────┴────────────┤
-│ AGENT BUS                          │ TIMELINE          │
-│ > /plan /confirm /accept /session /help                │
-└────────────────────────────────────────────────────────┘
-</pre>
-
 ---
 
 ## Requirements
