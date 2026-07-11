@@ -1,15 +1,18 @@
 # ArrowCode Guide
 
-Complete working plans, command reference, and system flows.
+>Complete working plans, command reference, and system flows.
 
-```
-     █████╗ ██████╗ ██████╗  ██████╗ ██╗    ██╗ ██████╗ ██████╗ ██████╗ ███████╗
-    ██╔══██╗██╔══██╗██╔══██╗██╔═══██╗██║    ██║██╔════╝██╔═══██╗██╔══██╗██╔════╝
-    ███████║██████╔╝██████╔╝██║   ██║██║ █╗ ██║██║     ██║   ██║██║  ██║█████╗
-    ██╔══██║██╔══██╗██╔══██╗██║   ██║██║███╗██║██║     ██║   ██║██║  ██║██╔══╝
-    ██║  ██║██║  ██║██║  ██║╚██████╔╝╚███╔███╔╝╚██████╗╚██████╔╝██████╔╝███████╗
-    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
-```
+<pre align=center>
+┌ Header · provider/model · YOLO · swarm n/16 · RUNNING ─┐
+│ phase EXECUTING · plan title                           │
+├──────────────────────────────┬────────────┬────────────┤
+│ ORCH          │ FE           │ PLAN       │ SWARM map  │
+│ BE            │ QA           │ FILES      │ DIFF       │
+├──────────────────────────────┴────────────┴────────────┤
+│ AGENT BUS                          │ TIMELINE          │
+│ > /plan /confirm /accept /session /help                │
+└────────────────────────────────────────────────────────┘
+</pre>
 
 **Version:** 1.0.0 · Multi-agent swarm harness · Session memory · Lightning perf
 
