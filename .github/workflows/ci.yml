@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile || bun install
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: CLI smoke
+        run: |
+          bun run src/index.ts --version
+          bun run src/index.ts --help
+          bun run src/index.ts --banner
+          bun run src/index.ts --list-models
+
+      - name: Integration smoke tests
+        run: bun run test:smoke
+
+      - name: Ensure no accidental home dependency for packaged defaults
+        run: |
+          rm -rf "$HOME/.arrowcode"
+          bun -e '
+            import { listTemplates } from "./src/templates/catalog.ts";
+            import { loadAgentPersonality } from "./src/agents/personalities.ts";
+            import { existsSync } from "fs";
+            import { join } from "path";
+            import { homedir } from "os";
+            const t = listTemplates();
+            if (t.length < 12) throw new Error("templates: " + t.length);
+            const p = loadAgentPersonality("orchestrator");
+            if (p.length < 20) throw new Error("personality empty");
+            if (existsSync(join(homedir(), ".arrowcode"))) throw new Error("home created");
+            console.log("defaults-ok", t.length);
+          '
