@@ -14,23 +14,31 @@ flowchart LR
 - **On your machine:** `~/.arrowcode/` — **only** if you install/setup/init.  
 - Copies **never overwrite** existing user files.
 
-## One-liner (Linux / macOS / WSL)
+## One-liner (Linux / macOS / WSL) — `install.sh`
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_USER/arrowcode/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.sh | bash
 ```
 
 With API setup:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_USER/arrowcode/main/install.sh | bash -s -- --setup
+curl -fsSL https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.sh | bash -s -- --setup
 ```
 
-## One-liner (Windows PowerShell)
+## One-liner (Windows PowerShell) — `install.ps1`
 
 ```powershell
-irm https://raw.githubusercontent.com/YOUR_USER/arrowcode/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.ps1 | iex
 ```
+
+With API setup:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/install.ps1))) -Setup
+```
+
+From a local clone:
 
 ```powershell
 .\install.ps1 -Setup
@@ -39,7 +47,7 @@ irm https://raw.githubusercontent.com/YOUR_USER/arrowcode/main/install.ps1 | iex
 ## From a local clone
 
 ```bash
-git clone https://github.com/YOUR_USER/arrowcode.git
+git clone https://github.com/Chintanpatel24/arrowcode.git
 cd arrowcode
 chmod +x install.sh bin/arrowcode
 ./install.sh
