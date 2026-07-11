@@ -1,0 +1,65 @@
+name: release-version-sync
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version to bump (e.g., 1.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Extract version from tag (e.g., v1.1.0 -> 1.1.0)
+            TAG="${{ github.event.release.tag_name }}"
+            VERSION="${TAG#v}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Bumping to version $VERSION"
+
+      - name: Update Version in package.json
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ env.VERSION }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+          "
+
+      - name: Update Version in install.sh
+        run: |
+          sed -i 's/^VERSION="[0-9]*\.[0-9]*\.[0-9]*"/VERSION="${{ env.VERSION }}"/g' install.sh
+
+      - name: Update Version in install.ps1
+        run: |
+          sed -i 's/^\$Version = "[0-9]*\.[0-9]*\.[0-9]*"/\$Version = "${{ env.VERSION }}"/g' install.ps1
+
+      - name: Update Version in src/index.ts
+        run: |
+          sed -i 's/^const VERSION = "[0-9]*\.[0-9]*\.[0-9]*";/const VERSION = "${{ env.VERSION }}";/g' src/index.ts
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json install.sh install.ps1 src/index.ts
+          git commit -m "chore: bump version to v${{ env.VERSION }}" || echo "No changes to commit"
+          git push origin HEAD:${{ github.event.repository.default_branch }}
