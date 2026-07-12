@@ -88,7 +88,9 @@ export function saveEnv(vars: Record<string, string>): void {
 }
 
 export function isConfigured(): boolean {
-  // process env first (no home required)
+  // Always load .env first to populate process.env!
+  loadDotEnv();
+
   const key =
     process.env.NVIDIA_API_KEY ||
     process.env.NIM_API_KEY ||
@@ -96,19 +98,13 @@ export function isConfigured(): boolean {
     process.env.ANTHROPIC_API_KEY ||
     process.env.ARROWCODE_API_KEY;
   if (key) return true;
+
   if (process.env.ARROWCODE_PROVIDER === "ollama") return true;
+
   for (const p of ["ORCH", "FE", "BE", "QA"]) {
     if (process.env[`ARROW_${p}_API_KEY`]) return true;
   }
-  // only then peek at user home files if they already exist
-  loadDotEnv();
-  if (existsSync(ENV_PATH)) {
-    const again =
-      process.env.NVIDIA_API_KEY ||
-      process.env.OPENAI_API_KEY ||
-      process.env.ARROWCODE_API_KEY;
-    if (again) return true;
-  }
+
   if (existsSync(CONFIG_PATH)) {
     try {
       const c = parseYaml(readFileSync(CONFIG_PATH, "utf8")) as Partial<ArrowConfig>;
