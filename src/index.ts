@@ -175,14 +175,14 @@ async function main() {
   const prompt = positionals.join(" ").trim();
   const harness = new Harness(cfg);
 
-  if (values["no-tui"]) {
-    if (!prompt) {
-      console.error("Headless mode requires a prompt.");
-      process.exit(1);
-    }
+  // Fallback to non-TUI mode if terminal is not a TTY or if requested
+  const isTTY = !!(process.stdout.isTTY && process.stdin.isTTY);
+  const useNoTui = !!(values["no-tui"] || !isTTY);
+
+  if (useNoTui || prompt !== "") {
     harness.events.on((e) => {
       if (e.type === "phase")
-        console.log(`[phase] ${e.phase} ${e.detail || ""}`);
+        console.log(`\n[phase] ${e.phase.toUpperCase()} ${e.detail || ""}`);
       else if (e.type === "agent_log" && e.line.kind !== "say")
         console.log(`[${e.agent}] ${e.line.kind}: ${e.line.text}`);
       else if (e.type === "agent_log" && e.line.kind === "say")
@@ -192,30 +192,94 @@ async function main() {
           `[bus] ${e.message.from} -> ${e.message.to} [${e.message.kind}] ${e.message.title}`,
         );
       else if (e.type === "system") console.log(`[system] ${e.text}`);
-      else if (e.type === "plan")
-        console.log(`[plan] ${e.plan.title}\n${e.plan.summary}`);
-      else if (e.type === "questions")
-        console.log(
-          `[questions]\n${e.questions.map((q, i) => `${i + 1}. ${q.question}`).join("\n")}`,
-        );
-      else if (e.type === "final") console.log("\n=== READY ===\n" + e.text);
+      else if (e.type === "plan") {
+        console.log(`\n=================== PLAN ===================`);
+        console.log(`Title: ${e.plan.title}`);
+        console.log(`Summary: ${e.plan.summary}`);
+        console.log(`============================================\n`);
+      } else if (e.type === "questions") {
+        console.log(`\n================= QUESTIONS =================`);
+        console.log(e.questions.map((q, i) => `${i + 1}. ${q.question}`).join("\n"));
+        console.log(`=============================================\n`);
+      } else if (e.type === "final") console.log("\n=== READY ===\n" + e.text);
       else if (e.type === "swarm")
         console.log(`[swarm] ${e.action} ${e.workerId} active=${e.active}`);
       else if (e.type === "approval_request") {
         if (cfg.autoApprove) harness.resolveApproval(e.id, true);
         else {
-          console.log(`[approval] denied (use -y): ${e.agent} ${e.tool}`);
+          console.log(`[approval] denied (use -y/--yolo or autoApprove): ${e.agent} ${e.tool}`);
           harness.resolveApproval(e.id, false);
         }
       }
     });
-    await harness.startPlan(prompt);
-    if (harness.plan) {
-      console.log("\n[headless] auto /confirm");
-      await harness.confirmAndExecute();
+
+    if (prompt) {
+      await harness.startPlan(prompt);
+      if (harness.plan) {
+        console.log("\n[headless] auto /confirm");
+        await harness.confirmAndExecute();
+      }
+      console.log("\n[metrics]", harness.metricsLine());
+      process.exit(0);
+    } else {
+      // CLI Interactive Session (like Claude Code)
+      const readline = await import("node:readline");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      console.log("\n================================================================");
+      console.log("       /\\");
+      console.log("      /  \\      ARROWCODE  Interactive CLI");
+      console.log("     / /\\ \\     swarm coding harness");
+      console.log("    /______\\    ORCH · FE · BE · QA");
+      console.log("================================================================\n");
+      console.log("  Welcome! You are in the interactive CLI mode (similar to Claude Code).");
+      console.log("  - Type standard prompt to chat with the agents.");
+      console.log("  - Use /plan <goal> to propose a new plan.");
+      console.log("  - Use /confirm to approve and execute the current plan.");
+      console.log("  - Use /accept to finish and save changes.");
+      console.log("  - Use /help to see all available commands.");
+      console.log("  - Type /exit or /quit to quit.\n");
+
+      const promptUser = () => {
+        rl.question("arrowcode> ", async (answer) => {
+          const line = answer.trim();
+          if (!line) {
+            promptUser();
+            return;
+          }
+          if (line === "/exit" || line === "/quit") {
+            rl.close();
+            process.exit(0);
+          }
+
+          if (line.startsWith("/")) {
+            // Dispatch command
+            const [cmd, ..._rest] = line.slice(1).split(/\s+/);
+            const { dispatchCommand } = await import("./commands/registry");
+            const res = await dispatchCommand(line, {
+              harness,
+              setYolo: () => {},
+              getYolo: () => false,
+            });
+            if (res.type === "exit") {
+              rl.close();
+              process.exit(0);
+            }
+            if (res && "message" in res && res.message) {
+              console.log(`[system] ${res.message}`);
+            }
+          } else {
+            await harness.chat(line);
+          }
+          promptUser();
+        });
+      };
+      promptUser();
+      return;
     }
-    console.log("\n[metrics]", harness.metricsLine());
-    process.exit(0);
   }
 
   const { waitUntilExit } = render(
