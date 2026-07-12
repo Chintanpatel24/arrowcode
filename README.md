@@ -2,7 +2,7 @@
 <img width="960" height="173" alt="arrowcode" src="https://github.com/user-attachments/assets/f4e94a54-220e-409f-8d02-8585767a8f43" />
 </div>
 
-**Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
+>**Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
 >- Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
 
 | Doc | Contents |
