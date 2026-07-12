@@ -75,11 +75,15 @@ export async function runSetupWizard(): Promise<boolean> {
     console.log("    2) OpenAI");
     console.log("    3) Anthropic");
     console.log("    4) Ollama       (local, no key)");
-    console.log("    5) Custom OpenAI-compatible base URL");
+    console.log("    5) Groq         (fast, api.groq.com)");
+    console.log("    6) DeepSeek     (api.deepseek.com)");
+    console.log("    7) Gemini       (Google OpenAI-compatible API)");
+    console.log("    8) OpenRouter   (openrouter.ai)");
+    console.log("    9) Custom OpenAI-compatible base URL");
     console.log("    0) Cancel / Set up later");
     console.log("");
 
-    const pAns = await ask(rl, "  Choose [0-5] (default 1): ");
+    const pAns = await ask(rl, "  Choose [0-9] (default 1): ");
     if (pAns === "0" || pAns.toLowerCase() === "cancel") {
       console.log("");
       console.log("  No problem! You can configure ArrowCode later by running: arrowcode --setup");
@@ -93,7 +97,11 @@ export async function runSetupWizard(): Promise<boolean> {
       "2": "openai",
       "3": "anthropic",
       "4": "ollama",
-      "5": "custom",
+      "5": "groq",
+      "6": "deepseek",
+      "7": "gemini",
+      "8": "openrouter",
+      "9": "custom",
     };
     const provider = map[pAns] || "nim";
 
@@ -134,6 +142,30 @@ export async function runSetupWizard(): Promise<boolean> {
       apiKey = "ollama";
       const b = await ask(rl, `  Ollama base URL (default ${baseUrl}): `);
       baseUrl = b || baseUrl;
+      const m = await ask(rl, `  Model (default ${model}): `);
+      model = m || model;
+    } else if (provider === "groq") {
+      baseUrl = "https://api.groq.com/openai/v1";
+      model = "llama-3.3-70b-versatile";
+      apiKey = await ask(rl, "  Groq API key: ");
+      const m = await ask(rl, `  Model (default ${model}): `);
+      model = m || model;
+    } else if (provider === "deepseek") {
+      baseUrl = "https://api.deepseek.com/v1";
+      model = "deepseek-chat";
+      apiKey = await ask(rl, "  DeepSeek API key: ");
+      const m = await ask(rl, `  Model (default ${model}): `);
+      model = m || model;
+    } else if (provider === "gemini") {
+      baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai";
+      model = "gemini-2.5-flash";
+      apiKey = await ask(rl, "  Gemini API key: ");
+      const m = await ask(rl, `  Model (default ${model}): `);
+      model = m || model;
+    } else if (provider === "openrouter") {
+      baseUrl = "https://openrouter.ai/api/v1";
+      model = "google/gemini-2.5-flash";
+      apiKey = await ask(rl, "  OpenRouter API key: ");
       const m = await ask(rl, `  Model (default ${model}): `);
       model = m || model;
     } else {

@@ -146,6 +146,30 @@ function providerDefaults(provider: ProviderId): {
         model: "qwen2.5-coder:14b",
         envKey: "OLLAMA_API_KEY",
       };
+    case "groq":
+      return {
+        baseUrl: "https://api.groq.com/openai/v1",
+        model: "llama-3.3-70b-versatile",
+        envKey: "GROQ_API_KEY",
+      };
+    case "deepseek":
+      return {
+        baseUrl: "https://api.deepseek.com/v1",
+        model: "deepseek-chat",
+        envKey: "DEEPSEEK_API_KEY",
+      };
+    case "gemini":
+      return {
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+        model: "gemini-2.5-flash",
+        envKey: "GEMINI_API_KEY",
+      };
+    case "openrouter":
+      return {
+        baseUrl: "https://openrouter.ai/api/v1",
+        model: "google/gemini-2.5-flash",
+        envKey: "OPENROUTER_API_KEY",
+      };
     default:
       return {
         baseUrl: DEFAULT_OPENAI_BASE,
