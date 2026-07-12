@@ -5,16 +5,6 @@
 >**Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
 >- Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
 
-| Doc | Contents |
-|-----|----------|
-| **[GUIDE.md](docs/GUIDE.md)** | Full command reference + working playbooks + diagrams |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
-| [docs/SESSIONS.md](docs/SESSIONS.md) | Session memory |
-| [docs/SECURITY.md](docs/SECURITY.md) | Policy / sandbox |
-| [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Speed kit |
-| [docs/TOOLS.md](docs/TOOLS.md) | Tool catalog |
-| [FEATURES.md](FEATURES.md) | Feature list / roadmap |
-
 ---
 
 ## Features
@@ -102,6 +92,18 @@ export NVIDIA_API_KEY=nvapi-...
 ```
 
 `~/.arrowcode` is created **only** by `--setup`, `--init`, or `./install.sh` / `install.ps1` (copied from `defaults/`).
+
+---
+
+| Doc | Contents |
+|-----|----------|
+| **[GUIDE.md](docs/GUIDE.md)** | Full command reference + working playbooks + diagrams |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
+| [docs/SESSIONS.md](docs/SESSIONS.md) | Session memory |
+| [docs/SECURITY.md](docs/SECURITY.md) | Policy / sandbox |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Speed kit |
+| [docs/TOOLS.md](docs/TOOLS.md) | Tool catalog |
+| [FEATURES.md](FEATURES.md) | Feature list / roadmap |
 
 ---
 
