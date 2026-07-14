@@ -165,18 +165,3 @@ bun run src/index.ts --help
 
 GitHub Actions: `.github/workflows/ci.yml` runs typecheck, CLI smoke, and integration smoke.
 
----
-
-## Publish checklist
-
-1. Replace `YOUR_USER` in `README.md`, `docs/INSTALL.md`, `install.sh`, `install.ps1`, `package.json`, `CONTRIBUTING.md`
-2. `bun run ci`
-3. Create GitHub repo → push `main`
-4. Optional: enable as **template repository**
-5. Tag release: `v1.0.0`
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE)
