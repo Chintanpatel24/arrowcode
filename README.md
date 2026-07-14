@@ -83,6 +83,14 @@ bun install
 bun link          # optional global arrowcode / ac
 ```
 
+### Update
+
+To update ArrowCode while preserving any local modifications you have made:
+
+```bash
+./update.sh
+```
+
 ### Setup API key
 
 ```bash
