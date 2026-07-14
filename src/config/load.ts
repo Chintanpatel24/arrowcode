@@ -96,10 +96,11 @@ export function isConfigured(): boolean {
     process.env.NIM_API_KEY ||
     process.env.OPENAI_API_KEY ||
     process.env.ANTHROPIC_API_KEY ||
-    process.env.ARROWCODE_API_KEY;
+    process.env.ARROWCODE_API_KEY ||
+    process.env.DEMO_API_KEY;
   if (key) return true;
 
-  if (process.env.ARROWCODE_PROVIDER === "ollama") return true;
+  if (process.env.ARROWCODE_PROVIDER === "ollama" || process.env.ARROWCODE_PROVIDER === "demo" || process.env.ARROWCODE_PROVIDER === "mock") return true;
 
   for (const p of ["ORCH", "FE", "BE", "QA"]) {
     if (process.env[`ARROW_${p}_API_KEY`]) return true;
@@ -108,7 +109,7 @@ export function isConfigured(): boolean {
   if (existsSync(CONFIG_PATH)) {
     try {
       const c = parseYaml(readFileSync(CONFIG_PATH, "utf8")) as Partial<ArrowConfig>;
-      if (c.provider === "ollama" || c.apiKey) return true;
+      if (c.provider === "ollama" || c.provider === "demo" || c.provider === "mock" || c.apiKey) return true;
     } catch {
       /* */
     }
@@ -122,6 +123,13 @@ function providerDefaults(provider: ProviderId): {
   envKey: string;
 } {
   switch (provider) {
+    case "demo":
+    case "mock":
+      return {
+        baseUrl: "demo",
+        model: "demo-v1",
+        envKey: "DEMO_API_KEY",
+      };
     case "nim":
       return {
         baseUrl: DEFAULT_NIM_BASE,
@@ -314,7 +322,7 @@ export function loadConfig(overrides: Partial<ArrowConfig> = {}): ArrowConfig {
     process.env.OPENAI_API_KEY ||
     process.env.ANTHROPIC_API_KEY ||
     file.apiKey ||
-    (provider === "ollama" ? "ollama" : "");
+    (provider === "ollama" ? "ollama" : (provider === "demo" || provider === "mock" ? "demo" : ""));
 
   const baseUrl =
     overrides.baseUrl ||

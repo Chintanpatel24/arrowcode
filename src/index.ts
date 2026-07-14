@@ -138,14 +138,46 @@ async function main() {
   if (!isConfigured()) {
     printBanner({ compact: true });
     console.log("ArrowCode is not configured yet.\n");
-    console.log(
-      "This will create ~/.arrowcode from packaged defaults/ and ask for an API key.\n",
-    );
+    console.log("Welcome to ArrowCode! Since you don't have an API key configured yet,");
+    console.log("you can choose one of the following options to get started immediately:");
+    console.log("  1) Use Mock / Demo mode (free, runs locally, no keys needed)");
+    console.log("  2) Configure a real LLM provider (NVIDIA NIM, OpenAI, Anthropic, etc.)");
+    console.log("");
+    const readline = await import("node:readline");
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    const choice = await new Promise<string>((res) => {
+      rl.question("Choose [1-2] (default 1): ", (ans) => res((ans || "").trim()));
+    });
+    rl.close();
+
     bootstrapUserHome();
-    const ok = await runSetupWizard();
-    if (!ok) process.exit(1);
-    if (!isConfigured()) {
-      process.exit(0);
+
+    if (choice === "2") {
+      const ok = await runSetupWizard();
+      if (!ok) process.exit(1);
+      if (!isConfigured()) {
+        process.exit(0);
+      }
+    } else {
+      // Setup demo/mock mode
+      const { saveEnv, saveConfig } = await import("./config/load");
+      saveEnv({
+        ARROWCODE_PROVIDER: "demo",
+        ARROWCODE_MODEL: "demo-v1",
+        ARROWCODE_BASE_URL: "demo",
+        DEMO_API_KEY: "demo",
+      });
+      saveConfig({
+        provider: "demo",
+        model: "demo-v1",
+        baseUrl: "demo",
+        apiKey: "demo",
+      });
+      console.log("\nDemo Mode configured! Starting ArrowCode...\n");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 

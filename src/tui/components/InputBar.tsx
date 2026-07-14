@@ -69,13 +69,13 @@ export function InputBar(props: {
   return (
     <Box
       flexDirection="row"
-      borderStyle="single"
-      borderColor="gray"
+      borderStyle="double"
+      borderColor="cyan"
       width={props.width}
       paddingX={1}
     >
       <Text color="cyan" bold>
-        {"> "}
+        {"prompt> "}
       </Text>
       <TextInput
         value={value}

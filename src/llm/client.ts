@@ -36,14 +36,14 @@ export class LLMClient {
     this.endpoint = endpoint;
     this.model = endpoint.model;
     this.provider = endpoint.provider;
-    if (!endpoint.apiKey && endpoint.provider !== "ollama") {
+    if (!endpoint.apiKey && endpoint.provider !== "ollama" && endpoint.provider !== "demo" && endpoint.provider !== "mock") {
       throw new LLMError(
         "No API key for this agent. Set global key or ARROW_<AGENT>_API_KEY / agents.yaml",
       );
     }
     this.client = new OpenAI({
       apiKey: endpoint.apiKey || "ollama",
-      baseURL: endpoint.baseUrl,
+      baseURL: endpoint.provider === "demo" || endpoint.provider === "mock" ? "http://demo-url" : endpoint.baseUrl,
       timeout: 120_000,
       maxRetries: 0,
     });
@@ -54,6 +54,58 @@ export class LLMClient {
     tools?: OpenAITool[],
     opts?: { onToken?: (t: string) => void; stream?: boolean },
   ): Promise<LLMResponse> {
+    if (this.provider === "demo" || this.provider === "mock") {
+      // Mock LLM response generator for instant works/tryout!
+      const userMessage = messages[messages.length - 1]?.content || "";
+      let replyContent = "Let's explore the workspace and carry out your request.";
+      const toolCalls: ToolCall[] = [];
+
+      // Determine the kind of reply based on the message content
+      const lower = typeof userMessage === "string" ? userMessage.toLowerCase() : "";
+      if (lower.includes("[mode=plan]") || lower.includes("plan")) {
+        replyContent = `\`\`\`arrow-plan
+title: Demo Implementation Plan
+summary: A mockup flow to demonstrate clean and fast execution.
+steps:
+  1. Explore local directories and files.
+  2. Setup frontend core elements.
+  3. Validate using offline tests.
+risks:
+  - Mock mode doesn't execute actual remote files.
+acceptance:
+  - UI works fine.
+  - Tests pass with green indicators.
+agents:
+  frontend: Core UI setup
+  backend: API endpoints mocking
+  tester: Verify everything
+\`\`\``;
+      } else if (lower.includes("[execute]") || lower.includes("execute") || lower.includes("confirm")) {
+        replyContent = `\`\`\`arrow-ready
+Verification: Verified that all mock procedures ran fine and the application is highly optimized.
+All tests are passing.
+\`\`\``;
+      } else if (lower.includes("health") || lower.includes("status")) {
+        replyContent = "Everything is functioning correctly under the demo environment.";
+      }
+
+      if (opts?.onToken) {
+        // simulate streaming
+        const parts = replyContent.split(" ");
+        for (const p of parts) {
+          opts.onToken(p + " ");
+          await Bun.sleep(5);
+        }
+      }
+
+      return {
+        content: replyContent,
+        toolCalls,
+        finishReason: "stop",
+        usage: { prompt_tokens: messages.length * 10, completion_tokens: replyContent.length / 4 }
+      };
+    }
+
     const stream = Boolean(opts?.stream && opts.onToken);
     const body: OpenAI.Chat.ChatCompletionCreateParams = {
       model: this.model,
