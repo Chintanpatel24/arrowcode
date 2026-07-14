@@ -53,6 +53,8 @@ type Overlay =
   | "plan"
   | "replay";
 
+type LayoutMode = "dashboard" | "classic";
+
 function emptyAgent(id: AgentId): AgentPaneModel {
   return {
     id,
@@ -76,6 +78,11 @@ export function App(props: {
   const { stdout } = useStdout();
   const [cols, setCols] = useState(stdout?.columns || 120);
   const [rows, setRows] = useState(stdout?.rows || 40);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("classic"); // Default is simple/classic chat interface!
+  const [chatLines, setChatLines] = useState<{ id: string; sender: string; text: string; color?: string }[]>([
+    { id: "welcome-1", sender: "system", text: "Welcome to ArrowCode Classic Mode!", color: "cyan" },
+    { id: "welcome-2", sender: "system", text: "Type any prompt or /help to explore. Toggle layout with /layout.", color: "gray" },
+  ]);
   const [agents, setAgents] = useState<Record<AgentId, AgentPaneModel>>(() => {
     const o = {} as Record<AgentId, AgentPaneModel>;
     for (const id of AGENT_ORDER) o[id] = emptyAgent(id);
@@ -145,6 +152,17 @@ export function App(props: {
       const trimmed = logs.length > 400 ? logs.slice(-400) : logs;
       return { ...prev, [id]: { ...cur, logs: trimmed } };
     });
+    if (line.kind !== "think") {
+      setChatLines((prev) => [
+        ...prev.slice(-100),
+        {
+          id: `log-${Date.now()}-${Math.random()}`,
+          sender: id.toUpperCase(),
+          text: line.text,
+          color: id === "orchestrator" ? "cyan" : id === "frontend" ? "magenta" : id === "backend" ? "yellow" : "green",
+        },
+      ]);
+    }
   }, []);
 
   useEffect(() => {
@@ -218,10 +236,28 @@ export function App(props: {
             "bus",
             `${e.message.from}→${e.message.to} ${e.message.title}`,
           );
+          setChatLines((prev) => [
+            ...prev.slice(-100),
+            {
+              id: `bus-${Date.now()}-${Math.random()}`,
+              sender: "bus",
+              text: `${e.message.from} -> ${e.message.to}: ${e.message.title}`,
+              color: "gray",
+            },
+          ]);
           break;
         case "system":
           setSystemLine(e.text);
           harness.sessionLog.push("system", e.text);
+          setChatLines((prev) => [
+            ...prev.slice(-100),
+            {
+              id: `sys-${Date.now()}-${Math.random()}`,
+              sender: "system",
+              text: e.text,
+              color: "yellow",
+            },
+          ]);
           break;
         case "run_start":
           setRunActive(true);
@@ -236,6 +272,15 @@ export function App(props: {
         case "final":
           setFinalText(e.text);
           harness.sessionLog.push("final", e.text.slice(0, 200));
+          setChatLines((prev) => [
+            ...prev.slice(-100),
+            {
+              id: `final-${Date.now()}-${Math.random()}`,
+              sender: "ready",
+              text: e.text,
+              color: "green",
+            },
+          ]);
           break;
         case "approval_request":
           setApproval({
@@ -322,6 +367,17 @@ export function App(props: {
   });
 
   const onSubmit = async (line: string) => {
+    // Save to user chat log too
+    setChatLines((prev) => [
+      ...prev.slice(-100),
+      {
+        id: `user-${Date.now()}-${Math.random()}`,
+        sender: "user",
+        text: line,
+        color: "white",
+      },
+    ]);
+
     if (line.startsWith("/")) {
       // local dashboard commands
       const [cmd, ...rest] = line.slice(1).split(/\s+/);
@@ -340,6 +396,11 @@ export function App(props: {
       if (c === "dashboard" || c === "dash") {
         refreshFiles();
         setSystemLine("Dashboard panels refreshed");
+        return;
+      }
+      if (c === "layout" || c === "ui") {
+        setLayoutMode((prev) => (prev === "dashboard" ? "classic" : "dashboard"));
+        setSystemLine(`Layout switched to ${layoutMode === "dashboard" ? "classic" : "dashboard"}`);
         return;
       }
 
@@ -611,52 +672,126 @@ export function App(props: {
         questions={questions}
       />
 
-      {/* MAIN DASHBOARD */}
-      <Box flexDirection="row" height={midH}>
-        {/* LEFT: 2x2 agents */}
-        <Box flexDirection="column" width={leftW} height={midH}>
-          <Box flexDirection="row" height={paneH}>
-            <AgentPane model={panes[0]!} width={paneW} height={paneH} />
-            <AgentPane model={panes[1]!} width={leftW - paneW} height={paneH} />
+      {layoutMode === "dashboard" ? (
+        /* MAIN DASHBOARD MODE */
+        <Box flexDirection="row" height={midH}>
+          {/* LEFT: 2x2 agents */}
+          <Box flexDirection="column" width={leftW} height={midH}>
+            <Box flexDirection="row" height={paneH}>
+              <AgentPane model={panes[0]!} width={paneW} height={paneH} />
+              <AgentPane model={panes[1]!} width={leftW - paneW} height={paneH} />
+            </Box>
+            <Box flexDirection="row" height={midH - paneH}>
+              <AgentPane model={panes[2]!} width={paneW} height={midH - paneH} />
+              <AgentPane
+                model={panes[3]!}
+                width={leftW - paneW}
+                height={midH - paneH}
+              />
+            </Box>
           </Box>
-          <Box flexDirection="row" height={midH - paneH}>
-            <AgentPane model={panes[2]!} width={paneW} height={midH - paneH} />
-            <AgentPane
-              model={panes[3]!}
-              width={leftW - paneW}
-              height={midH - paneH}
-            />
-          </Box>
-        </Box>
 
-        {/* RIGHT: plan | swarm / files | diff */}
-        <Box flexDirection="column" width={rightW} height={midH}>
-          <Box flexDirection="row" height={rightTopH}>
-            <PlanPanel plan={plan} width={planW} height={rightTopH} />
-            <SwarmMap
-              width={swarmW}
-              height={rightTopH}
-              nodes={swarmNodes}
-              maxWorkers={config.swarm?.maxWorkers ?? 16}
-              active={swarmActive}
-            />
-          </Box>
-          <Box flexDirection="row" height={rightBotH}>
-            <FileTree
-              width={treeW}
-              height={rightBotH}
-              paths={filePaths}
-              selected={selectedFile}
-            />
-            <DiffPanel
-              width={diffW}
-              height={rightBotH}
-              path={selectedFile}
-              diff={diffText}
-            />
+          {/* RIGHT: plan | swarm / files | diff */}
+          <Box flexDirection="column" width={rightW} height={midH}>
+            <Box flexDirection="row" height={rightTopH}>
+              <PlanPanel plan={plan} width={planW} height={rightTopH} />
+              <SwarmMap
+                width={swarmW}
+                height={rightTopH}
+                nodes={swarmNodes}
+                maxWorkers={config.swarm?.maxWorkers ?? 16}
+                active={swarmActive}
+              />
+            </Box>
+            <Box flexDirection="row" height={rightBotH}>
+              <FileTree
+                width={treeW}
+                height={rightBotH}
+                paths={filePaths}
+                selected={selectedFile}
+              />
+              <DiffPanel
+                width={diffW}
+                height={rightBotH}
+                path={selectedFile}
+                diff={diffText}
+              />
+            </Box>
           </Box>
         </Box>
-      </Box>
+      ) : (
+        /* CLASSIC SIMPLE CHAT MODE */
+        <Box flexDirection="row" height={midH}>
+          {/* LEFT CHAT PANEL: Beautiful classic scrollable Chat stream */}
+          <Box
+            flexDirection="column"
+            width={leftW}
+            height={midH}
+            borderStyle="single"
+            borderColor="gray"
+            paddingX={1}
+          >
+            <Box flexDirection="column" height={midH - 2}>
+              {chatLines.slice(-Math.floor(midH / 2)).map((line) => (
+                <Text key={line.id}>
+                  <Text color={line.color || "white"} bold>
+                    {`[${line.sender}]`}
+                  </Text>
+                  <Text color="white"> {line.text.slice(0, leftW - 12)}</Text>
+                </Text>
+              ))}
+            </Box>
+          </Box>
+
+          {/* RIGHT SIDEBAR: Sleek classic high-contrast status card */}
+          <Box
+            flexDirection="column"
+            width={rightW}
+            height={midH}
+            borderStyle="single"
+            borderColor="cyan"
+            paddingX={1}
+          >
+            <Text color="cyan" bold>┌── STATUS PANEL ──┐</Text>
+            <Box flexDirection="column" marginTop={1}>
+              <Text>
+                <Text color="gray">Workspace: </Text>
+                <Text color="white">{config.workspace.split("/").pop() || "root"}</Text>
+              </Text>
+              <Text>
+                <Text color="gray">Provider:  </Text>
+                <Text color="magenta">{config.provider}</Text>
+              </Text>
+              <Text>
+                <Text color="gray">Active:    </Text>
+                <Text color="yellow">{phase.toUpperCase()}</Text>
+              </Text>
+              <Text>
+                <Text color="gray">Swarm:     </Text>
+                <Text color="green">{`${swarmActive} / ${config.swarm?.maxWorkers ?? 16}`}</Text>
+              </Text>
+            </Box>
+
+            <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray">
+              <Text color="cyan" bold> SQUAD STATUS </Text>
+              {panes.map((p) => (
+                <Text key={p.id}>
+                  <Text color="gray">{p.id.toUpperCase().slice(0, 4)}: </Text>
+                  <Text color={p.status === "thinking" ? "yellow" : "green"}>
+                    {p.status.toUpperCase()}
+                  </Text>
+                </Text>
+              ))}
+            </Box>
+
+            <Box marginTop={1}>
+              <Text color="gray" dimColor>
+                Toggle UI mode with: /layout
+              </Text>
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       {showQuestions ? (
         <QuestionsPanel width={width} height={qH} questions={questions} />

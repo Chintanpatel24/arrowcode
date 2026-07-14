@@ -19,24 +19,24 @@ export function Header(props: {
     <Box
       flexDirection="row"
       justifyContent="space-between"
-      borderStyle="single"
+      borderStyle="double"
       borderColor="cyan"
       paddingX={1}
       width={props.width}
     >
       <Box>
         <Text color="cyan" bold>
-          {"▶ ARROWCODE"}
+          {"◆ ARROWCODE ◆"}
         </Text>
-        <Text color="gray"> v1.0 </Text>
+        <Text color="gray"> [v1.0.0] </Text>
         <Text color="gray">| </Text>
-        <Text color="white">{config.provider}</Text>
+        <Text color="white" bold>{config.provider.toUpperCase()}</Text>
         <Text color="gray"> / </Text>
         <Text color="magenta">{truncate(config.model, 28)}</Text>
         {config.templateId ? (
           <Text color="gray">
             {" "}
-            | tmpl {config.templateId}
+            | tmpl: {config.templateId}
           </Text>
         ) : null}
       </Box>

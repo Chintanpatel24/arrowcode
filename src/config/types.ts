@@ -1,6 +1,6 @@
 /** Shared types for ArrowCode — swarm multi-agent coding harness. */
 
-export type ProviderId = "nim" | "openai" | "anthropic" | "ollama" | "groq" | "deepseek" | "gemini" | "openrouter" | "custom";
+export type ProviderId = "nim" | "openai" | "anthropic" | "ollama" | "groq" | "deepseek" | "gemini" | "openrouter" | "custom" | "demo" | "mock";
 
 export type AgentId = "orchestrator" | "frontend" | "backend" | "tester";
 
