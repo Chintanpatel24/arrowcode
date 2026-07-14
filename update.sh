@@ -13,8 +13,30 @@ log()  { printf '%s==>%s %s\n' "$CYN" "$RST" "$*"; }
 ok()   { printf '%s[ok]%s %s\n' "$GRN" "$RST" "$*"; }
 err()  { printf '%s[err]%s %s\n' "$RED" "$RST" "$*" >&2; }
 
-# Find ArrowCode base directory
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Find ArrowCode base directory dynamically (even if piped via stdin)
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+  # fallback to global/local shared locations if piped via stdin
+  DIR="${ARROWCODE_DIR:-$HOME/.local/share/arrowcode}"
+fi
+
+if [ ! -d "$DIR" ] || [ ! -f "$DIR/package.json" ]; then
+  # Try to find base from command line 'arrowcode' binary symlink or standard home folder
+  if command -v arrowcode >/dev/null 2>&1; then
+    BIN_PATH=$(which arrowcode)
+    if [ -h "$BIN_PATH" ]; then
+      REAL_BIN=$(readlink "$BIN_PATH")
+      DIR="$(cd "$(dirname "$REAL_BIN")/.." && pwd)"
+    fi
+  fi
+fi
+
+if [ ! -d "$DIR" ] || [ ! -f "$DIR/package.json" ]; then
+  err "Could not find ArrowCode installation directory. Please run the installer first or set ARROWCODE_DIR."
+  exit 1
+fi
+
 cd "$DIR"
 
 log "Updating ArrowCode at $DIR..."

@@ -85,10 +85,10 @@ bun link          # optional global arrowcode / ac
 
 ### Update
 
-To update ArrowCode while preserving any local modifications you have made:
+To instantly update ArrowCode from any directory, keeping your local changes preserved:
 
 ```bash
-./update.sh
+curl -fsSL https://raw.githubusercontent.com/Chintanpatel24/arrowcode/main/update.sh | bash
 ```
 
 ### Setup API key
