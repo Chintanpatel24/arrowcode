@@ -5,6 +5,10 @@
 >**Multi-agent terminal coding harness** — plan → questions → confirm → execute → accept.
 >- Four agents (**ORCH · FE · BE · QA**) work in parallel, can spawn swarm workers, use **25+ tools**, and support **per-agent APIs/models**.
 
+<div align=center>
+<img width="1324" height="733" alt="arrowcode" src="https://github.com/user-attachments/assets/542510d2-af3a-4fdb-8daa-81dc15071291" />
+</div>
+
 ---
 
 ## Features
