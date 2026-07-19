@@ -55,6 +55,59 @@ type Overlay =
 
 type LayoutMode = "dashboard" | "classic";
 
+function ThinkingSpinner() {
+  const [frame, setFrame] = useState(0);
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFrame((f) => (f + 1) % frames.length);
+    }, 80);
+    return () => clearInterval(timer);
+  }, []);
+
+  return <Text color="cyan" bold>{frames[frame]} </Text>;
+}
+
+function renderMessageText(text: string, panelWidth: number) {
+  if (!text) return null;
+  const parts = text.split("```");
+  return parts.map((part, index) => {
+    const isCode = index % 2 === 1;
+    if (isCode) {
+      const lines = part.split("\n");
+      const firstLine = lines[0] || "";
+      const hasLang = /^[a-zA-Z0-9_-]+$/.test(firstLine.trim());
+      const codeLines = hasLang ? lines.slice(1) : lines;
+      const codeText = codeLines.join("\n").trim();
+      return (
+        <Box
+          key={index}
+          flexDirection="column"
+          borderStyle="single"
+          borderColor="gray"
+          paddingX={1}
+          marginY={1}
+          width={Math.max(20, panelWidth - 8)}
+        >
+          {hasLang && (
+            <Text color="cyan" bold dimColor>
+              {`/* ${firstLine.trim()} */`}
+            </Text>
+          )}
+          <Text color="yellow">{codeText}</Text>
+        </Box>
+      );
+    } else {
+      return (
+        <Text key={index} color="white">
+          {part}
+        </Text>
+      );
+    }
+  });
+}
+
 function emptyAgent(id: AgentId): AgentPaneModel {
   return {
     id,
@@ -79,6 +132,7 @@ export function App(props: {
   const [cols, setCols] = useState(stdout?.columns || 120);
   const [rows, setRows] = useState(stdout?.rows || 40);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("classic"); // Default is simple/classic chat interface!
+  const [attachedFiles, setAttachedFiles] = useState<{ path: string; content: string }[]>([]);
   const [chatLines, setChatLines] = useState<{ id: string; sender: string; text: string; color?: string }[]>([
     { id: "welcome-1", sender: "system", text: "Welcome to ArrowCode Classic Mode!", color: "cyan" },
     { id: "welcome-2", sender: "system", text: "Type any prompt or /help to explore. Toggle layout with /layout.", color: "gray" },
@@ -366,22 +420,65 @@ export function App(props: {
     }
   });
 
-  const onSubmit = async (line: string) => {
+  const onSubmit = async (inputLine: string) => {
+    let line = inputLine.trim();
+    if (line.startsWith(".")) {
+      line = "/" + line.slice(1);
+    }
+
     // Save to user chat log too
     setChatLines((prev) => [
       ...prev.slice(-100),
       {
         id: `user-${Date.now()}-${Math.random()}`,
         sender: "user",
-        text: line,
+        text: inputLine,
         color: "white",
       },
     ]);
+
+    if (line.startsWith("/add ")) {
+      const filePath = line.slice(5).trim();
+      try {
+        const absolutePath = harness.workspace.resolve(filePath, { mustExist: true });
+        const fs = require("node:fs");
+        const content = fs.readFileSync(absolutePath, "utf8");
+        const lineCount = content.split("\n").length;
+        setAttachedFiles((prev) => [...prev, { path: filePath, content }]);
+        setSystemLine(`Attached file ${filePath} (${lineCount} lines)`);
+        setChatLines((prev) => [
+          ...prev,
+          {
+            id: `add-${Date.now()}`,
+            sender: "system",
+            text: `📎 Attached file: ${filePath} (${lineCount} lines). This will be included in your next prompt/plan.`,
+            color: "green",
+          },
+        ]);
+      } catch (err: any) {
+        setSystemLine(`Error reading file: ${err.message}`);
+        setChatLines((prev) => [
+          ...prev,
+          {
+            id: `add-err-${Date.now()}`,
+            sender: "system",
+            text: `❌ Failed to attach file "${filePath}": ${err.message}`,
+            color: "red",
+          },
+        ]);
+      }
+      return;
+    }
 
     if (line.startsWith("/")) {
       // local dashboard commands
       const [cmd, ...rest] = line.slice(1).split(/\s+/);
       const c = (cmd || "").toLowerCase();
+      if (c === "swarm") {
+        setLayoutMode((prev) => (prev === "dashboard" ? "classic" : "dashboard"));
+        setSystemLine(`Layout switched to ${layoutMode === "dashboard" ? "classic" : "dashboard"}`);
+        return;
+      }
       if (c === "replay") {
         const path = harness.exportReplay(rest[0]);
         setSystemLine(`Replay exported → ${path}`);
@@ -404,7 +501,16 @@ export function App(props: {
         return;
       }
 
-      const res = await dispatchCommand(line, {
+      let cmdLine = line;
+      if (c === "plan" && attachedFiles.length > 0) {
+        const attachmentBlock = attachedFiles
+          .map((f) => `=== ATTACHED FILE: ${f.path} ===\n${f.content}\n===============================`)
+          .join("\n\n");
+        cmdLine = `/plan ${attachmentBlock}\n\nUser Request:\n${line.slice(5).trim()}`;
+        setAttachedFiles([]);
+      }
+
+      const res = await dispatchCommand(cmdLine, {
         harness,
         setYolo,
         getYolo: () => yolo,
@@ -444,7 +550,16 @@ export function App(props: {
       refreshFiles();
       return;
     }
-    harness.chat(line);
+
+    let payload = line;
+    if (attachedFiles.length > 0) {
+      const attachmentBlock = attachedFiles
+        .map((f) => `=== ATTACHED FILE: ${f.path} ===\n${f.content}\n===============================`)
+        .join("\n\n");
+      payload = `${attachmentBlock}\n\nUser Prompt:\n${line}`;
+      setAttachedFiles([]);
+    }
+    harness.chat(payload);
   };
 
   const onSettingsSave = (v: SettingsValues) => {
@@ -721,73 +836,27 @@ export function App(props: {
         </Box>
       ) : (
         /* CLASSIC SIMPLE CHAT MODE */
-        <Box flexDirection="row" height={midH}>
-          {/* LEFT CHAT PANEL: Beautiful classic scrollable Chat stream */}
+        <Box flexDirection="column" height={midH}>
+          {/* FULL SCREEN CHAT PANEL: Beautiful classic scrollable Chat stream */}
           <Box
             flexDirection="column"
-            width={leftW}
+            width={width}
             height={midH}
             borderStyle="single"
             borderColor="gray"
             paddingX={1}
           >
             <Box flexDirection="column" height={midH - 2}>
-              {chatLines.slice(-Math.floor(midH / 2)).map((line) => (
-                <Text key={line.id}>
+              {chatLines.slice(-10).map((line) => (
+                <Box key={line.id} flexDirection="column" marginY={0} paddingBottom={1}>
                   <Text color={line.color || "white"} bold>
                     {`[${line.sender}]`}
                   </Text>
-                  <Text color="white"> {line.text.slice(0, leftW - 12)}</Text>
-                </Text>
+                  <Box flexDirection="column" paddingLeft={2}>
+                    {renderMessageText(line.text, width)}
+                  </Box>
+                </Box>
               ))}
-            </Box>
-          </Box>
-
-          {/* RIGHT SIDEBAR: Sleek classic high-contrast status card */}
-          <Box
-            flexDirection="column"
-            width={rightW}
-            height={midH}
-            borderStyle="single"
-            borderColor="cyan"
-            paddingX={1}
-          >
-            <Text color="cyan" bold>┌── STATUS PANEL ──┐</Text>
-            <Box flexDirection="column" marginTop={1}>
-              <Text>
-                <Text color="gray">Workspace: </Text>
-                <Text color="white">{config.workspace.split("/").pop() || "root"}</Text>
-              </Text>
-              <Text>
-                <Text color="gray">Provider:  </Text>
-                <Text color="magenta">{config.provider}</Text>
-              </Text>
-              <Text>
-                <Text color="gray">Active:    </Text>
-                <Text color="yellow">{phase.toUpperCase()}</Text>
-              </Text>
-              <Text>
-                <Text color="gray">Swarm:     </Text>
-                <Text color="green">{`${swarmActive} / ${config.swarm?.maxWorkers ?? 16}`}</Text>
-              </Text>
-            </Box>
-
-            <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor="gray">
-              <Text color="cyan" bold> SQUAD STATUS </Text>
-              {panes.map((p) => (
-                <Text key={p.id}>
-                  <Text color="gray">{p.id.toUpperCase().slice(0, 4)}: </Text>
-                  <Text color={p.status === "thinking" ? "yellow" : "green"}>
-                    {p.status.toUpperCase()}
-                  </Text>
-                </Text>
-              ))}
-            </Box>
-
-            <Box marginTop={1}>
-              <Text color="gray" dimColor>
-                Toggle UI mode with: /layout
-              </Text>
             </Box>
           </Box>
         </Box>
@@ -803,10 +872,16 @@ export function App(props: {
         <Timeline events={timeline} width={timeW} height={bottomH} />
       </Box>
 
-      <Box paddingX={1} width={width}>
+      <Box paddingX={1} width={width} flexDirection="row" justifyContent="space-between">
         <Text color="gray" wrap="truncate">
           {systemLine}
         </Text>
+        {runActive && (
+          <Box flexDirection="row">
+            <ThinkingSpinner />
+            <Text color="cyan" bold>Thinking & executing tools...</Text>
+          </Box>
+        )}
       </Box>
 
       {finalText ? (

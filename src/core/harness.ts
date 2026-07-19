@@ -741,6 +741,18 @@ export class Harness {
 
 
 
+  async chatDirect(line: string) {
+    this.stopFlag = false;
+    this.runActive = true;
+    this.events.emit({ type: "run_start", prompt: line });
+    this.agents.get("orchestrator")!.assign(
+      `[mode=chat] Answer the user's question directly. Keep your response concise, clear, and helpful. You have access to tools to read the workspace and files, but do not make any multi-agent plans unless specifically requested.\n\nUser Question:\n${line}`
+    );
+    await this.waitUntilIdle(8 * 60 * 1000);
+    this.runActive = false;
+    this.events.emit({ type: "run_end", ok: true });
+  }
+
   chat(line: string) {
     // During questions phase, treat as answers
     if (this.phase === "questions") {
@@ -781,13 +793,13 @@ export class Harness {
       return;
     }
 
-    // default: if idle, start plan; if executing, route to orch
+    // default: if idle, start standard chat direct; if executing, route to orch
     if (
       this.phase === "idle" ||
       this.phase === "accepted" ||
       this.phase === "stopped"
     ) {
-      void this.startPlan(line);
+      void this.chatDirect(line);
       return;
     }
     this.agents.get("orchestrator")!.assign(line);

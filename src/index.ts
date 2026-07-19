@@ -287,11 +287,16 @@ async function main() {
             process.exit(0);
           }
 
-          if (line.startsWith("/")) {
+          let cmdLine = line;
+          if (cmdLine.startsWith(".")) {
+            cmdLine = "/" + cmdLine.slice(1);
+          }
+
+          if (cmdLine.startsWith("/")) {
             // Dispatch command
-            const [cmd, ..._rest] = line.slice(1).split(/\s+/);
+            const [cmd, ..._rest] = cmdLine.slice(1).split(/\s+/);
             const { dispatchCommand } = await import("./commands/registry");
-            const res = await dispatchCommand(line, {
+            const res = await dispatchCommand(cmdLine, {
               harness,
               setYolo: () => {},
               getYolo: () => false,
