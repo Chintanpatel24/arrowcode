@@ -207,128 +207,176 @@ async function main() {
   const prompt = positionals.join(" ").trim();
   const harness = new Harness(cfg);
 
-  // Fallback to non-TUI mode if terminal is not a TTY or if requested
-  const isTTY = !!(process.stdout.isTTY && process.stdin.isTTY);
-  const useNoTui = !!(values["no-tui"] || !isTTY);
-
-  if (useNoTui || prompt !== "") {
-    harness.events.on((e) => {
-      if (e.type === "phase")
+  harness.events.on((e) => {
+    if (e.type === "phase") {
+      if (harness.phase !== "idle") {
         console.log(`\n[phase] ${e.phase.toUpperCase()} ${e.detail || ""}`);
-      else if (e.type === "agent_log" && e.line.kind !== "say")
+      }
+    } else if (e.type === "agent_log" && e.line.kind !== "say") {
+      if (harness.phase !== "idle") {
         console.log(`[${e.agent}] ${e.line.kind}: ${e.line.text}`);
-      else if (e.type === "agent_log" && e.line.kind === "say")
-        process.stdout.write(e.line.text);
-      else if (e.type === "bus")
+      }
+    } else if (e.type === "agent_log" && e.line.kind === "say") {
+      process.stdout.write(e.line.text);
+    } else if (e.type === "bus") {
+      if (harness.phase !== "idle") {
         console.log(
           `[bus] ${e.message.from} -> ${e.message.to} [${e.message.kind}] ${e.message.title}`,
         );
-      else if (e.type === "system") console.log(`[system] ${e.text}`);
-      else if (e.type === "plan") {
-        console.log(`\n=================== PLAN ===================`);
-        console.log(`Title: ${e.plan.title}`);
-        console.log(`Summary: ${e.plan.summary}`);
-        console.log(`============================================\n`);
-      } else if (e.type === "questions") {
-        console.log(`\n================= QUESTIONS =================`);
-        console.log(e.questions.map((q, i) => `${i + 1}. ${q.question}`).join("\n"));
-        console.log(`=============================================\n`);
-      } else if (e.type === "final") console.log("\n=== READY ===\n" + e.text);
-      else if (e.type === "swarm")
-        console.log(`[swarm] ${e.action} ${e.workerId} active=${e.active}`);
-      else if (e.type === "approval_request") {
-        if (cfg.autoApprove) harness.resolveApproval(e.id, true);
-        else {
-          console.log(`[approval] denied (use -y/--yolo or autoApprove): ${e.agent} ${e.tool}`);
-          harness.resolveApproval(e.id, false);
-        }
       }
+    } else if (e.type === "system") {
+      console.log(`[system] ${e.text}`);
+    } else if (e.type === "plan") {
+      console.log(`\n=================== PLAN ===================`);
+      console.log(`Title: ${e.plan.title}`);
+      console.log(`Summary: ${e.plan.summary}`);
+      console.log(`============================================\n`);
+    } else if (e.type === "questions") {
+      console.log(`\n================= QUESTIONS =================`);
+      console.log(e.questions.map((q, i) => `${i + 1}. ${q.question}`).join("\n"));
+      console.log(`=============================================\n`);
+    } else if (e.type === "final") {
+      console.log("\n=== READY ===\n" + e.text);
+    } else if (e.type === "swarm") {
+      if (harness.phase !== "idle") {
+        console.log(`[swarm] ${e.action} ${e.workerId} active=${e.active}`);
+      }
+    } else if (e.type === "approval_request") {
+      if (cfg.autoApprove) harness.resolveApproval(e.id, true);
+      else {
+        console.log(`[approval] denied (use -y/--yolo or autoApprove): ${e.agent} ${e.tool}`);
+        harness.resolveApproval(e.id, false);
+      }
+    }
+  });
+
+  if (prompt) {
+    await harness.startPlan(prompt);
+    if (harness.plan) {
+      console.log("\n[headless] auto /confirm");
+      await harness.confirmAndExecute();
+    }
+    console.log("\n[metrics]", harness.metricsLine());
+    process.exit(0);
+  } else {
+    // CLI Interactive Session (like Claude Code)
+    const readline = await import("node:readline");
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
     });
 
-    if (prompt) {
-      await harness.startPlan(prompt);
-      if (harness.plan) {
-        console.log("\n[headless] auto /confirm");
-        await harness.confirmAndExecute();
-      }
-      console.log("\n[metrics]", harness.metricsLine());
-      process.exit(0);
-    } else {
-      // CLI Interactive Session (like Claude Code)
-      const readline = await import("node:readline");
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
+    console.log("\n================================================================");
+    console.log("       /\\");
+    console.log("      /  \\      ARROWCODE  Interactive CLI");
+    console.log("     / /\\ \\     swarm coding harness");
+    console.log("    /______\\    ORCH · FE · BE · QA");
+    console.log("================================================================\n");
+    console.log("  Welcome! You are in the interactive CLI mode (similar to Claude Code).");
+    console.log("  - Type standard prompt to chat with the agents.");
+    console.log("  - Use /plan <goal> to propose a new plan.");
+    console.log("  - Use /add <filepath> to attach a file to the context.");
+    console.log("  - Use /swarm to launch the fullscreen dashboard TUI.");
+    console.log("  - Use /confirm to approve and execute the current plan.");
+    console.log("  - Use /accept to finish and save changes.");
+    console.log("  - Use /help to see all available commands.");
+    console.log("  - Type /exit or /quit to quit.\n");
 
-      console.log("\n================================================================");
-      console.log("       /\\");
-      console.log("      /  \\      ARROWCODE  Interactive CLI");
-      console.log("     / /\\ \\     swarm coding harness");
-      console.log("    /______\\    ORCH · FE · BE · QA");
-      console.log("================================================================\n");
-      console.log("  Welcome! You are in the interactive CLI mode (similar to Claude Code).");
-      console.log("  - Type standard prompt to chat with the agents.");
-      console.log("  - Use /plan <goal> to propose a new plan.");
-      console.log("  - Use /confirm to approve and execute the current plan.");
-      console.log("  - Use /accept to finish and save changes.");
-      console.log("  - Use /help to see all available commands.");
-      console.log("  - Type /exit or /quit to quit.\n");
+    const attachedFiles: { path: string; content: string }[] = [];
 
-      const promptUser = () => {
-        rl.question("arrowcode> ", async (answer) => {
-          const line = answer.trim();
-          if (!line) {
-            promptUser();
-            return;
+    const promptUser = () => {
+      rl.question("arrowcode> ", async (answer) => {
+        const line = answer.trim();
+        if (!line) {
+          promptUser();
+          return;
+        }
+        if (line === "/exit" || line === "/quit") {
+          rl.close();
+          process.exit(0);
+        }
+
+        let cmdLine = line;
+        if (cmdLine.startsWith(".")) {
+          cmdLine = "/" + cmdLine.slice(1);
+        }
+
+        if (cmdLine === "/swarm") {
+          rl.close();
+          console.log("\nLaunching Multi-Agent Swarm TUI Dashboard...");
+          const { render } = await import("ink");
+          const { App } = await import("./tui/App");
+          const { waitUntilExit } = render(
+            React.createElement(App, {
+              harness,
+              config: cfg,
+              initialPrompt: undefined,
+            }),
+            { exitOnCtrlC: true },
+          );
+          await waitUntilExit();
+          process.exit(0);
+        }
+
+        if (cmdLine.startsWith("/add ")) {
+          const filePath = cmdLine.slice(5).trim();
+          try {
+            const absolutePath = harness.workspace.resolve(filePath, { mustExist: true });
+            const fs = await import("node:fs");
+            const content = fs.readFileSync(absolutePath, "utf8");
+            const lineCount = content.split("\n").length;
+            attachedFiles.push({ path: filePath, content });
+            console.log(`[system] Attached file ${filePath} (${lineCount} lines)`);
+          } catch (err: any) {
+            console.log(`[system] Error: Failed to attach file: ${err.message}`);
           }
-          if (line === "/exit" || line === "/quit") {
+          promptUser();
+          return;
+        }
+
+        if (cmdLine.startsWith("/")) {
+          // Dispatch command
+          const [cmd, ..._rest] = cmdLine.slice(1).split(/\s+/);
+          const { dispatchCommand } = await import("./commands/registry");
+
+          let modifiedCmdLine = cmdLine;
+          if (cmd === "plan" && attachedFiles.length > 0) {
+            const attachmentBlock = attachedFiles
+              .map((f) => `=== ATTACHED FILE: ${f.path} ===\n${f.content}\n===============================`)
+              .join("\n\n");
+            modifiedCmdLine = `/plan ${attachmentBlock}\n\nUser Request:\n${cmdLine.slice(5).trim()}`;
+            attachedFiles.length = 0;
+          }
+
+          const res = await dispatchCommand(modifiedCmdLine, {
+            harness,
+            setYolo: () => {},
+            getYolo: () => false,
+          });
+          if (res.type === "exit") {
             rl.close();
             process.exit(0);
           }
-
-          let cmdLine = line;
-          if (cmdLine.startsWith(".")) {
-            cmdLine = "/" + cmdLine.slice(1);
+          if (res && "message" in res && res.message) {
+            console.log(`[system] ${res.message}`);
           }
-
-          if (cmdLine.startsWith("/")) {
-            // Dispatch command
-            const [cmd, ..._rest] = cmdLine.slice(1).split(/\s+/);
-            const { dispatchCommand } = await import("./commands/registry");
-            const res = await dispatchCommand(cmdLine, {
-              harness,
-              setYolo: () => {},
-              getYolo: () => false,
-            });
-            if (res.type === "exit") {
-              rl.close();
-              process.exit(0);
-            }
-            if (res && "message" in res && res.message) {
-              console.log(`[system] ${res.message}`);
-            }
-          } else {
-            await harness.chat(line);
+        } else {
+          let payload = line;
+          if (attachedFiles.length > 0) {
+            const attachmentBlock = attachedFiles
+              .map((f) => `=== ATTACHED FILE: ${f.path} ===\n${f.content}\n===============================`)
+              .join("\n\n");
+            payload = `${attachmentBlock}\n\nUser Prompt:\n${line}`;
+            attachedFiles.length = 0;
           }
-          promptUser();
-        });
-      };
-      promptUser();
-      return;
-    }
+          await harness.chat(payload);
+        }
+        promptUser();
+      });
+    };
+    promptUser();
+    return;
   }
-
-  const { waitUntilExit } = render(
-    React.createElement(App, {
-      harness,
-      config: cfg,
-      initialPrompt: prompt || undefined,
-    }),
-    { exitOnCtrlC: true },
-  );
-
-  await waitUntilExit();
 }
 
 main().catch((e) => {
