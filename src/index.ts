@@ -259,7 +259,7 @@ async function main() {
     console.log("\n[metrics]", harness.metricsLine());
     process.exit(0);
   } else {
-    // CLI Interactive Session (like Claude Code)
+    // CLI Interactive Session (like Claude Code) is now the default!
     const readline = await import("node:readline");
     const rl = readline.createInterface({
       input: process.stdin,
