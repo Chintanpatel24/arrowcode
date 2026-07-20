@@ -315,6 +315,7 @@ export function App(props: {
           break;
         case "run_start":
           setRunActive(true);
+          setLayoutMode("classic");
           setFinalText("");
           setSystemLine(`Running: ${e.prompt.slice(0, 80)}`);
           harness.sessionLog.push("user", e.prompt.slice(0, 200));
