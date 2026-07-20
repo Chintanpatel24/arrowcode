@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
+import fs from "node:fs";
 import type {
   ArrowConfig,
   AgentId,
@@ -315,7 +316,6 @@ export function App(props: {
           break;
         case "run_start":
           setRunActive(true);
-          setLayoutMode("classic");
           setFinalText("");
           setSystemLine(`Running: ${e.prompt.slice(0, 80)}`);
           harness.sessionLog.push("user", e.prompt.slice(0, 200));
@@ -442,7 +442,6 @@ export function App(props: {
       const filePath = line.slice(5).trim();
       try {
         const absolutePath = harness.workspace.resolve(filePath, { mustExist: true });
-        const fs = require("node:fs");
         const content = fs.readFileSync(absolutePath, "utf8");
         const lineCount = content.split("\n").length;
         setAttachedFiles((prev) => [...prev, { path: filePath, content }]);
