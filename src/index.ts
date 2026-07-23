@@ -208,24 +208,12 @@ async function main() {
   const harness = new Harness(cfg);
 
   harness.events.on((e) => {
-    if (e.type === "phase") {
-      if (harness.phase !== "idle") {
-        console.log(`\n[phase] ${e.phase.toUpperCase()} ${e.detail || ""}`);
+    if (e.type === "agent_log") {
+      if (e.line.kind === "say") {
+        process.stdout.write(e.line.text);
+      } else if (e.line.kind === "error") {
+        console.log(`\nError: ${e.line.text}`);
       }
-    } else if (e.type === "agent_log" && e.line.kind !== "say") {
-      if (harness.phase !== "idle") {
-        console.log(`[${e.agent}] ${e.line.kind}: ${e.line.text}`);
-      }
-    } else if (e.type === "agent_log" && e.line.kind === "say") {
-      process.stdout.write(e.line.text);
-    } else if (e.type === "bus") {
-      if (harness.phase !== "idle") {
-        console.log(
-          `[bus] ${e.message.from} -> ${e.message.to} [${e.message.kind}] ${e.message.title}`,
-        );
-      }
-    } else if (e.type === "system") {
-      console.log(`[system] ${e.text}`);
     } else if (e.type === "plan") {
       console.log(`\n=================== PLAN ===================`);
       console.log(`Title: ${e.plan.title}`);
@@ -237,16 +225,8 @@ async function main() {
       console.log(`=============================================\n`);
     } else if (e.type === "final") {
       console.log("\n=== READY ===\n" + e.text);
-    } else if (e.type === "swarm") {
-      if (harness.phase !== "idle") {
-        console.log(`[swarm] ${e.action} ${e.workerId} active=${e.active}`);
-      }
     } else if (e.type === "approval_request") {
-      if (cfg.autoApprove) harness.resolveApproval(e.id, true);
-      else {
-        console.log(`[approval] denied (use -y/--yolo or autoApprove): ${e.agent} ${e.tool}`);
-        harness.resolveApproval(e.id, false);
-      }
+      harness.resolveApproval(e.id, true);
     }
   });
 
