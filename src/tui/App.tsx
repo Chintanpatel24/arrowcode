@@ -895,10 +895,10 @@ export function App(props: {
         </Box>
 
         <Box flexDirection="column" alignItems="center" width={Math.min(width - 4, 70)} marginY={1}>
-          <Text color="gray" dimColor align="center">
+          <Text color="gray" dimColor>
             {`ArrowCode 1.0 is here, try it out for free for a limited time!`}
           </Text>
-          <Text color="gray" dimColor align="center">
+          <Text color="gray" dimColor>
             {"[Ready for prompt input below] or use Arrow Keys + Enter"}
           </Text>
         </Box>
