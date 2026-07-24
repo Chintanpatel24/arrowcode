@@ -1,0 +1,18 @@
+[package]
+name = "arrowcode"
+version = "1.0.0"
+edition = "2021"
+authors = ["Chintanpatel24"]
+description = "ArrowCode — premium minimal multi-agent terminal coding harness in Rust"
+
+[dependencies]
+tokio = { version = "1.38", features = ["full"] }
+crossterm = { version = "0.27", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures-util = "0.3"
+dotenvy = "0.15"
+dirs = "5.0"
+walkdir = "2.5"
+regex = "1.10"
