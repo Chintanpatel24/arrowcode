@@ -11,16 +11,12 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 ROOT="$(cd "$DIR/.." && pwd)"
 
-if command -v bun >/dev/null 2>&1; then
-  exec bun "$ROOT/src/index.ts" "$@"
+# Fast compile/check and run the premium Rust binary
+if command -v cargo >/dev/null 2>&1; then
+  # Build quietly to ensure a minimal, smooth, and noise-free user experience
+  cargo build --release --manifest-path "$ROOT/Cargo.toml" --quiet
+  exec "$ROOT/target/release/arrowcode" "$@"
 fi
 
-if command -v npx >/dev/null 2>&1; then
-  # Fallback: bun not on PATH — try via npm-installed bun or plain node won't work (TS)
-  echo "ArrowCode requires Bun. Install: https://bun.sh" >&2
-  echo "  curl -fsSL https://bun.sh/install | bash" >&2
-  exit 1
-fi
-
-echo "ArrowCode requires Bun. Install: https://bun.sh" >&2
+echo "ArrowCode requires Cargo & Rust. Install: https://rustup.rs" >&2
 exit 1
