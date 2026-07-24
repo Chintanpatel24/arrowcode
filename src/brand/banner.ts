@@ -19,6 +19,13 @@ export const BANNER_COMPACT = `
 `.replace(/^\n/, "");
 
 /** Clean line-art mark for small terminals / headers */
+export const PREMIUM_MINIMAL_ASCII = `
+          ▞▀▖
+          ▚▄▘▛▀▖▛▀▖▞▀▖▌  ▌▞▀▖
+          ▞  ▖▙▄▘▙▄▘▌ ▌▐▐ ▌▌ ▌
+          ▚▄▘▛  ▘▛  ▘▚▄▘ ▘ ▘▚▄▘
+`.trim();
+
 export const MARK = `
       /\\
      /  \\      ARROWCODE

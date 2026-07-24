@@ -259,123 +259,41 @@ async function main() {
     console.log("\n[metrics]", harness.metricsLine());
     process.exit(0);
   } else {
-    // CLI Interactive Session (like Claude Code) is now the default!
-    const readline = await import("node:readline");
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+    // Enter alternate screen buffer to cleanly overtake the whole terminal canvas
+    // and hide scrollback history while running.
+    process.stdout.write("\x1b[?1049h\x1b[H");
+
+    const exitAlternateScreen = () => {
+      process.stdout.write("\x1b[?1049l\x1b[?25h");
+    };
+
+    process.on("exit", exitAlternateScreen);
+    process.on("SIGINT", () => {
+      exitAlternateScreen();
+      process.exit(130);
+    });
+    process.on("uncaughtException", (err) => {
+      exitAlternateScreen();
+      console.error(err);
+      process.exit(1);
     });
 
-    console.log("\n================================================================");
-    console.log("       /\\");
-    console.log("      /  \\      ARROWCODE  Interactive CLI");
-    console.log("     / /\\ \\     swarm coding harness");
-    console.log("    /______\\    ORCH · FE · BE · QA");
-    console.log("================================================================\n");
-    console.log("  Welcome! You are in the interactive CLI mode (similar to Claude Code).");
-    console.log("  - Type standard prompt to chat with the agents.");
-    console.log("  - Use /plan <goal> to propose a new plan.");
-    console.log("  - Use /add <filepath> to attach a file to the context.");
-    console.log("  - Use /swarm to launch the fullscreen dashboard TUI.");
-    console.log("  - Use /confirm to approve and execute the current plan.");
-    console.log("  - Use /accept to finish and save changes.");
-    console.log("  - Use /help to see all available commands.");
-    console.log("  - Type /exit or /quit to quit.\n");
-
-    const attachedFiles: { path: string; content: string }[] = [];
-
-    const promptUser = () => {
-      rl.question("arrowcode> ", async (answer) => {
-        const line = answer.trim();
-        if (!line) {
-          promptUser();
-          return;
-        }
-        if (line === "/exit" || line === "/quit") {
-          rl.close();
-          process.exit(0);
-        }
-
-        let cmdLine = line;
-        if (cmdLine.startsWith(".")) {
-          cmdLine = "/" + cmdLine.slice(1);
-        }
-
-        if (cmdLine === "/swarm") {
-          rl.close();
-          console.log("\nLaunching Multi-Agent Swarm TUI Dashboard...");
-          const { render } = await import("ink");
-          const { App } = await import("./tui/App");
-          const { waitUntilExit } = render(
-            React.createElement(App, {
-              harness,
-              config: cfg,
-              initialPrompt: undefined,
-            }),
-            { exitOnCtrlC: true },
-          );
-          await waitUntilExit();
-          process.exit(0);
-        }
-
-        if (cmdLine.startsWith("/add ")) {
-          const filePath = cmdLine.slice(5).trim();
-          try {
-            const absolutePath = harness.workspace.resolve(filePath, { mustExist: true });
-            const fs = await import("node:fs");
-            const content = fs.readFileSync(absolutePath, "utf8");
-            const lineCount = content.split("\n").length;
-            attachedFiles.push({ path: filePath, content });
-            console.log(`[system] Attached file ${filePath} (${lineCount} lines)`);
-          } catch (err: any) {
-            console.log(`[system] Error: Failed to attach file: ${err.message}`);
-          }
-          promptUser();
-          return;
-        }
-
-        if (cmdLine.startsWith("/")) {
-          // Dispatch command
-          const [cmd, ..._rest] = cmdLine.slice(1).split(/\s+/);
-          const { dispatchCommand } = await import("./commands/registry");
-
-          let modifiedCmdLine = cmdLine;
-          if (cmd === "plan" && attachedFiles.length > 0) {
-            const attachmentBlock = attachedFiles
-              .map((f) => `=== ATTACHED FILE: ${f.path} ===\n${f.content}\n===============================`)
-              .join("\n\n");
-            modifiedCmdLine = `/plan ${attachmentBlock}\n\nUser Request:\n${cmdLine.slice(5).trim()}`;
-            attachedFiles.length = 0;
-          }
-
-          const res = await dispatchCommand(modifiedCmdLine, {
-            harness,
-            setYolo: () => {},
-            getYolo: () => false,
-          });
-          if (res.type === "exit") {
-            rl.close();
-            process.exit(0);
-          }
-          if (res && "message" in res && res.message) {
-            console.log(`[system] ${res.message}`);
-          }
-        } else {
-          let payload = line;
-          if (attachedFiles.length > 0) {
-            const attachmentBlock = attachedFiles
-              .map((f) => `=== ATTACHED FILE: ${f.path} ===\n${f.content}\n===============================`)
-              .join("\n\n");
-            payload = `${attachmentBlock}\n\nUser Prompt:\n${line}`;
-            attachedFiles.length = 0;
-          }
-          await harness.chat(payload);
-        }
-        promptUser();
-      });
-    };
-    promptUser();
-    return;
+    try {
+      const { render } = await import("ink");
+      const { App } = await import("./tui/App");
+      const { waitUntilExit } = render(
+        React.createElement(App, {
+          harness,
+          config: cfg,
+          initialPrompt: undefined,
+        }),
+        { exitOnCtrlC: true },
+      );
+      await waitUntilExit();
+    } finally {
+      exitAlternateScreen();
+    }
+    process.exit(0);
   }
 }
 

@@ -121,6 +121,8 @@ function emptyAgent(id: AgentId): AgentPaneModel {
   };
 }
 
+import { PREMIUM_MINIMAL_ASCII } from "../brand/banner";
+
 export function App(props: {
   harness: Harness;
   config: ArrowConfig;
@@ -132,6 +134,11 @@ export function App(props: {
   const { stdout } = useStdout();
   const [cols, setCols] = useState(stdout?.columns || 120);
   const [rows, setRows] = useState(stdout?.rows || 40);
+
+  // Premium Minimal Home View State matching the reference screenshot!
+  const [isHomeActive, setIsHomeActive] = useState(true);
+  const [selectedHomeIndex, setSelectedHomeIndex] = useState(0);
+
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("classic"); // Default is simple/classic chat interface!
   const [attachedFiles, setAttachedFiles] = useState<{ path: string; content: string }[]>([]);
   const [chatLines, setChatLines] = useState<{ id: string; sender: string; text: string; color?: string }[]>([
@@ -400,6 +407,58 @@ export function App(props: {
       setOverlay("none");
       return;
     }
+
+    if (isHomeActive) {
+      // Handle keys on the beautiful Startup Menu
+      if (key.upArrow) {
+        setSelectedHomeIndex((prev) => (prev > 0 ? prev - 1 : 3));
+        return;
+      }
+      if (key.downArrow) {
+        setSelectedHomeIndex((prev) => (prev < 3 ? prev + 1 : 0));
+        return;
+      }
+      if (key.return) {
+        if (selectedHomeIndex === 0) {
+          // New session / task
+          setIsHomeActive(false);
+        } else if (selectedHomeIndex === 1) {
+          // Resume session
+          setIsHomeActive(false);
+          // Try loading last session automatically
+          const ls = harness.sessionList();
+          const match = ls.match(/Session ID: ([^\s]+)/);
+          if (match && match[1]) {
+            harness.sessionLoad(match[1]);
+          }
+        } else if (selectedHomeIndex === 2) {
+          // Changelog
+          setOverlay("replay");
+        } else if (selectedHomeIndex === 3) {
+          // Quit
+          exit();
+        }
+        return;
+      }
+      if (key.ctrl && input === "w") {
+        setIsHomeActive(false);
+        return;
+      }
+      if (key.ctrl && input === "s") {
+        setIsHomeActive(false);
+        const ls = harness.sessionList();
+        const match = ls.match(/Session ID: ([^\s]+)/);
+        if (match && match[1]) {
+          harness.sessionLoad(match[1]);
+        }
+        return;
+      }
+      if (key.ctrl && input === "q") {
+        exit();
+        return;
+      }
+    }
+
     if (key.tab && overlay === "none" && filePaths.length) {
       setFileFocus((i) => {
         const n = (i + 1) % filePaths.length;
@@ -425,6 +484,10 @@ export function App(props: {
     let line = inputLine.trim();
     if (line.startsWith(".")) {
       line = "/" + line.slice(1);
+    }
+
+    if (isHomeActive) {
+      setIsHomeActive(false);
     }
 
     // Save to user chat log too
@@ -631,6 +694,27 @@ export function App(props: {
 
   const panes = useMemo(() => AGENT_ORDER.map((id) => agents[id]), [agents]);
 
+  // Determine agent status lights for premium minimalistic display
+  const renderAgentStatusTags = () => {
+    return (
+      <Box flexDirection="row" paddingX={1} marginY={0} justifyContent="center" width={width}>
+        {panes.map((p) => {
+          let color = "gray";
+          if (p.status === "thinking") color = "cyan";
+          else if (p.status === "tool") color = "yellow";
+          else if (p.status === "waiting") color = "magenta";
+          else if (p.status === "done") color = "green";
+          return (
+            <Box key={p.id} marginX={1}>
+              <Text color="gray" dimColor>{p.id.toUpperCase()}: </Text>
+              <Text color={color} bold>{p.status.toUpperCase()}</Text>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
   if (overlay === "settings") {
     return (
       <Box width={width} height={rows} alignItems="center" justifyContent="center">
@@ -768,6 +852,76 @@ export function App(props: {
     );
   }
 
+  if (isHomeActive) {
+    // Beautiful Startup screen matching the reference image from the prompt!
+    return (
+      <Box
+        flexDirection="column"
+        width={width}
+        height={rows}
+        alignItems="center"
+        justifyContent="space-between"
+        paddingY={2}
+      >
+        <Box flexDirection="column" alignItems="center" marginTop={2}>
+          <Text color="white" bold>
+            {PREMIUM_MINIMAL_ASCII}
+          </Text>
+          <Text color="gray" dimColor>
+            {"          swarm coding harness"}
+          </Text>
+        </Box>
+
+        <Box flexDirection="column" width={Math.min(width - 4, 60)} marginY={1}>
+          {[
+            { label: "New worktree", shortcut: "ctrl+w" },
+            { label: "Resume session", shortcut: "ctrl+s" },
+            { label: "Changelog", shortcut: "" },
+            { label: "Quit", shortcut: "ctrl+q" },
+          ].map((item, idx) => {
+            const isSelected = selectedHomeIndex === idx;
+            return (
+              <Box key={idx} justifyContent="space-between" paddingX={2} marginY={0}>
+                <Text color={isSelected ? "cyan" : "white"} bold={isSelected}>
+                  {isSelected ? "❯ " : "  "}
+                  {item.label}
+                </Text>
+                <Text color="gray" dimColor>
+                  {item.shortcut}
+                </Text>
+              </Box>
+            );
+          })}
+        </Box>
+
+        <Box flexDirection="column" alignItems="center" width={Math.min(width - 4, 70)} marginY={1}>
+          <Text color="gray" dimColor align="center">
+            {`ArrowCode 1.0 is here, try it out for free for a limited time!`}
+          </Text>
+          <Text color="gray" dimColor align="center">
+            {"[Ready for prompt input below] or use Arrow Keys + Enter"}
+          </Text>
+        </Box>
+
+        <Box flexDirection="column" width={width} paddingX={1}>
+          <Text color="gray" dimColor>
+            Tip: Use standard CLI prompts to start coding immediately.
+          </Text>
+          <InputBar
+            width={width}
+            onSubmit={(v) => void onSubmit(v)}
+            placeholder="Type prompt to start a new worktree / session"
+          />
+          <Box justifyContent="flex-end" width={width - 2} paddingRight={1}>
+            <Text color="gray" bold>
+              ArrowCode 1.0.0 Beta
+            </Text>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" width={width} height={rows}>
       <Header
@@ -837,7 +991,7 @@ export function App(props: {
       ) : (
         /* CLASSIC SIMPLE CHAT MODE */
         <Box flexDirection="column" height={midH}>
-          {/* FULL SCREEN CHAT PANEL: Beautiful classic scrollable Chat stream */}
+          {/* Full Screen Chat Panel: Beautiful classic scrollable Chat stream with status tags */}
           <Box
             flexDirection="column"
             width={width}
@@ -846,8 +1000,8 @@ export function App(props: {
             borderColor="gray"
             paddingX={1}
           >
-            <Box flexDirection="column" height={midH - 2}>
-              {chatLines.slice(-10).map((line) => (
+            <Box flexDirection="column" height={midH - 4} overflowY="hidden">
+              {chatLines.slice(-6).map((line) => (
                 <Box key={line.id} flexDirection="column" marginY={0} paddingBottom={1}>
                   <Text color={line.color || "white"} bold>
                     {`[${line.sender}]`}
@@ -858,6 +1012,7 @@ export function App(props: {
                 </Box>
               ))}
             </Box>
+            {renderAgentStatusTags()}
           </Box>
         </Box>
       )}

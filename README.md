@@ -109,6 +109,7 @@ export NVIDIA_API_KEY=nvapi-...
 
 | Doc | Contents |
 |-----|----------|
+| **[HOW_TO_USE.md](docs/HOW_TO_USE.md)** | **Detailed premium startup, commands, and layouts guide** |
 | **[GUIDE.md](docs/GUIDE.md)** | Full command reference + working playbooks + diagrams |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
 | [docs/SESSIONS.md](docs/SESSIONS.md) | Session memory |
